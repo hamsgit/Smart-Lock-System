@@ -1,0 +1,106 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+// Include Keypad library
+#include <Keypad.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
+const int Password_Length = 7;// Password Length
+String Data;// Character to hold password input
+String Master = "1234567";// Password
+String lock = "1234560";
+// Pin connected to lock relay signal
+int lockOutput = 11;//loch open
+int lockOutput1 = 12;//busser
+int lockOutput2 = 13;//lock close
+// Counter for character entries
+byte data_count = 0;
+// Character to hold key input
+char customKey;
+// Constants for row and column sizes
+const byte ROWS = 4;
+const byte COLS = 3;
+// Array to represent keys on keypad
+char hexaKeys[ROWS][COLS] = {
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'*', '0', '#'}
+};
+
+// Connections to Arduino
+byte rowPins[ROWS] = {9, 8, 7, 6};
+byte colPins[COLS] = {5, 4, 3};
+
+// Create keypad object
+Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
+void setup()
+{
+  lcd.init();         // initialize the lcd
+  lcd.backlight();    // Turn on the LCD screen backlight
+  // Set lockOutput as an OUTPUT pin
+  pinMode(lockOutput, OUTPUT);
+  pinMode(lockOutput1, OUTPUT);
+  pinMode(lockOutput2, OUTPUT);
+}
+
+void loop()
+{
+  // Initialize LCD and print
+  lcd.setCursor(0, 0);
+  lcd.print("Enter Password:");
+  // Look for keypress
+  customKey = customKeypad.getKey();
+  if (customKey) {
+                    // Enter keypress into array and increment counter
+                    Data += customKey;
+                    lcd.setCursor(data_count, 1);
+                    lcd.print(Data[data_count]);
+                    data_count++;
+                 }
+  // See if we have reached the password length
+  if (data_count == Password_Length) {
+                                        lcd.clear();
+                                    
+                                        if (Data == Master) {
+                                                              // Correct Password
+                                                              lcd.print("Correct");
+                                                              // Turn on relay for 5 seconds
+                                                              digitalWrite(lockOutput, HIGH);
+                                                              delay(5000);
+                                                              digitalWrite(lockOutput, LOW);
+                                                              lcd.clear();
+                                                              }
+                                         else if (Data == lock){
+                                                              // Correct Password
+                                                              lcd.print("Clossing..");
+                                                              // Turn on relay for 5 seconds
+                                                              digitalWrite(lockOutput2, HIGH);
+                                                              delay(5000);
+                                                              digitalWrite(lockOutput2, LOW);
+                                                              lcd.clear();
+                                                              }
+                                         
+                                        
+                                        else {
+                                                    // Incorrect Password
+                                                    lcd.print("Incorrect");
+                                                    delay(1000);
+                                                    digitalWrite(lockOutput1, HIGH);//busser
+                                                    delay(5000);
+                                                    digitalWrite(lockOutput1, LOW);
+                                             }
+                                    
+                                        // Clear data and LCD display
+                                        lcd.clear();
+                                        clearData();
+                                      }
+
+
+}
+
+void clearData() {
+  //Reset data_count
+  data_count = 0;
+  //Reset Data
+  Data ="";
+  
+}
